@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Cache-Control" content="no-store">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Coach">
+<title>Coach the Coach</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.png">
+<script>
+// Surface load/runtime failures on screen. A silent JS error is indistinguishable
+// from "the buttons do nothing", which cost us an afternoon.
+window.__boot = false;
+function __fatal(msg) {
+  var d = document.createElement('div');
+  d.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:999;background:#2a1618;' +
+    'border-top:2px solid #e2574c;color:#ffb4ae;padding:14px;font:13px/1.5 -apple-system,sans-serif;white-space:pre-wrap';
+  d.textContent = 'App failed to start:\n' + msg;
+  (document.body || document.documentElement).appendChild(d);
+}
+addEventListener('error', function (e) {
+  __fatal(e.message + (e.filename ? '\n' + e.filename + ':' + e.lineno : ''));
+}, true);
+addEventListener('unhandledrejection', function (e) { __fatal(String(e.reason)); });
+addEventListener('load', function () {
+  if (!window.__boot) __fatal('app.js did not execute. Usually a stale cached copy — reload this page.');
+});
+</script>
+<style>
+  :root{
+    --bg:#0f1115; --card:#181b22; --line:#272b35; --fg:#e8eaf0;
+    --dim:#9aa1b1; --accent:#4f8cff; --good:#2fbf71; --warn:#e8a33d; --bad:#e2574c;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{overflow-x:hidden;max-width:100%}
+  body{margin:0;background:var(--bg);color:var(--fg);
+    font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+  header{display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:12px 14px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:10}
+  header h1{font-size:17px;margin:0;letter-spacing:-.2px;flex:0 1 auto;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  main{max-width:720px;margin:0 auto;padding:18px 14px}
+  /* narrow side panel: drop the title, give the tabs the whole row */
+  @media (max-width:560px){
+    header h1{display:none}
+    header{justify-content:center;padding:10px 8px}
+    .tabs{width:100%}
+    .tabs button{flex:1}
+  }
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:14px}
+  button{font:inherit;border:0;border-radius:10px;padding:12px 18px;cursor:pointer;color:#fff;background:var(--accent)}
+  button.ghost{background:transparent;border:1px solid var(--line);color:var(--fg)}
+  button.rec{background:var(--bad);width:100%;font-size:19px;padding:22px;font-weight:600}
+  button.stop{background:#333a47}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  label{display:block;font-size:13px;color:var(--dim);margin:14px 0 6px;font-weight:600;
+    text-transform:uppercase;letter-spacing:.4px}
+  input,textarea,select{width:100%;background:#0c0e13;border:1px solid var(--line);color:var(--fg);
+    border-radius:10px;padding:11px 13px;font:inherit}
+  textarea{min-height:150px;resize:vertical;line-height:1.5}
+  .timer{font-size:44px;font-variant-numeric:tabular-nums;text-align:center;margin:10px 0;letter-spacing:-1px}
+  .dot{display:inline-block;width:11px;height:11px;border-radius:50%;background:var(--bad);
+    margin-right:9px;vertical-align:middle;animation:p 1.1s infinite}
+  @keyframes p{50%{opacity:.25}}
+  .muted{color:var(--dim);font-size:14px}
+  .bar{height:5px;background:#0c0e13;border-radius:3px;overflow:hidden;margin:12px 0}
+  .bar>i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+  .out{white-space:pre-wrap;font-size:15px;line-height:1.65}
+  .out h2,.out h3{font-size:14px;text-transform:uppercase;letter-spacing:.5px;color:var(--accent);
+    margin:20px 0 8px;border-bottom:1px solid var(--line);padding-bottom:6px}
+  .sess{display:flex;justify-content:space-between;align-items:center;padding:12px 0;
+    border-bottom:1px solid var(--line);cursor:pointer;gap:10px}
+  .sess:last-child{border:0}
+  .sess b{font-weight:600;font-size:15px}
+  .seg{display:flex;gap:0;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .seg button{flex:1;background:transparent;color:var(--dim);border-radius:0;padding:11px 8px;font-size:14px}
+  .seg button.on{background:var(--accent);color:#fff;font-weight:600}
+  .pill{display:inline-block;background:#1d2a1f;color:var(--good);border:1px solid #2f5c3f;
+    border-radius:20px;padding:2px 9px;font-size:11px;font-weight:600;letter-spacing:.3px;margin-left:8px}
+  .tabs{display:flex;gap:4px;flex:0 0 auto}
+  .tabs button{padding:8px 12px;font-size:14px;background:transparent;color:var(--dim);white-space:nowrap}
+  .tabs button.on{background:var(--card);color:var(--fg)}
+  .err{background:#2a1618;border:1px solid var(--bad);color:#ffb4ae;padding:12px;border-radius:10px;
+    margin:12px 0;font-size:14px;white-space:pre-wrap}
+  .ok{color:var(--good)}
+  .hide{display:none}
+  .lvl{height:8px;background:#0c0e13;border-radius:4px;overflow:hidden;margin:16px 0}
+  .lvl>i{display:block;height:100%;background:var(--good);width:0}
+</style>
+</head>
+<body>
+<header>
+  <h1>Coach the Coach</h1>
+  <div class="tabs">
+    <button id="tRec" class="on">Record</button>
+    <button id="tHist">Sessions</button>
+    <button id="tSet">Setup</button>
+  </div>
+</header>
+
+<main>
+  <!-- ======== RECORD ======== -->
+  <section id="vRec">
+    <div class="card">
+      <label>Whose session is this?</label>
+      <div class="seg">
+        <button id="modeGrade" class="on">A team lead's — grade it</button>
+        <button id="modeTeach">Mine — learn from it</button>
+      </div>
+      <p class="muted" id="modeHelp" style="margin:10px 0 0">Transcribed, then graded against your rubric.</p>
+
+      <label id="lbLead">Team lead being coached</label>
+      <input id="lead" placeholder="e.g. Yasmin">
+      <label>Agent in the session</label>
+      <input id="agent" placeholder="e.g. Lestvia Rubio">
+    </div>
+
+    <div class="card" id="recCard">
+      <div class="timer" id="timer">00:00</div>
+      <div class="lvl"><i id="lvl"></i></div>
+      <button class="rec" id="btnRec">Start recording</button>
+      <div class="row" style="margin-top:10px">
+        <button class="ghost" id="btnFile" style="flex:1">Use an audio file instead</button>
+      </div>
+      <input type="file" id="file" accept="audio/*,video/mp4" class="hide">
+      <p class="muted" style="margin:14px 0 0">Mic stays on this device. Nothing is sent to Google until you hit &ldquo;Transcribe &amp; coach&rdquo;.</p>
+    </div>
+
+    <div class="card hide" id="doneCard">
+      <div id="recInfo" class="muted"></div>
+      <audio id="player" controls style="width:100%;margin:12px 0"></audio>
+      <div class="row">
+        <button id="btnGo" style="flex:1">Transcribe &amp; coach</button>
+        <button class="ghost" id="btnScrap">Discard</button>
+      </div>
+      <div class="bar hide" id="progWrap"><i id="prog"></i></div>
+      <div class="muted" id="progTxt"></div>
+    </div>
+
+    <div id="recErr"></div>
+  </section>
+
+  <!-- ======== RESULT ======== -->
+  <section id="vOut" class="hide">
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <div><b id="outTitle"></b><div class="muted" id="outSub"></div></div>
+        <button class="ghost" id="btnBack">Back</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="tabs" style="margin-bottom:12px">
+        <button id="tCoach" class="on">Coaching</button>
+        <button id="tScript">Transcript</button>
+      </div>
+      <div class="out" id="outCoach"></div>
+      <div class="out hide" id="outScript"></div>
+    </div>
+    <div class="card">
+      <div class="row">
+        <button class="ghost" id="btnCopy">Copy</button>
+        <button class="ghost" id="btnMail">Email to team lead</button>
+        <button class="ghost" id="btnGold">Use as my standard</button>
+        <button class="ghost" id="btnDel" style="margin-left:auto">Delete session</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======== SESSIONS ======== -->
+  <section id="vHist" class="hide">
+    <div class="card" id="histList"></div>
+  </section>
+
+  <!-- ======== SETUP ======== -->
+  <section id="vSet" class="hide">
+    <div class="card">
+      <label>Gemini API key</label>
+      <input id="key" type="password" placeholder="AIza...">
+      <p class="muted">Free at <b>aistudio.google.com/apikey</b>. Stored only in this browser, never uploaded anywhere but Google.</p>
+      <div class="row" style="margin-top:10px">
+        <button class="ghost" id="btnTest">Test key</button>
+        <span id="keyMsg" class="muted" style="align-self:center"></span>
+      </div>
+      <div id="modelWrap" class="hide">
+        <label>Model</label>
+        <select id="model"></select>
+        <p class="muted">Picked automatically from what your key can run. Only change this if transcription quality is poor.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <label>Coaching feedback language</label>
+      <select id="outLang">
+        <option value="English">English</option>
+        <option value="Spanish">Spanish</option>
+        <option value="the same language the session was held in">Match the session</option>
+      </select>
+      <p class="muted">Session audio is auto-detected (English, Spanish, or mixed) either way.</p>
+    </div>
+
+    <div class="card">
+      <label>What good coaching looks like — your rubric</label>
+      <p class="muted" style="margin-top:-2px">Paste your SOPs / QA scorecard, then add your own rules underneath. This is the only thing the AI grades against.</p>
+      <textarea id="rubric" style="min-height:320px"></textarea>
+      <div class="row" style="margin-top:12px">
+        <button id="btnSave">Save setup</button>
+        <button class="ghost" id="btnSeed">Load starter rubric</button>
+        <span id="setMsg" class="muted" style="align-self:center"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <label>Learn from my own coaching</label>
+      <p class="muted" style="margin-top:-2px" id="goldCount"></p>
+      <p class="muted">Record your own 1:1s on the Record tab with <b>&ldquo;Mine — learn from it&rdquo;</b> selected.
+         Once you have a few, this reads them and rewrites the rubric in your voice. Your sessions are
+         also quoted as the reference standard when grading a team lead.</p>
+      <div class="row" style="margin-top:10px">
+        <button id="btnLearn">Rewrite rubric from my sessions</button>
+        <span id="learnMsg" class="muted" style="align-self:center"></span>
+      </div>
+      <div class="bar hide" id="learnBar"><i id="learnProg"></i></div>
+    </div>
+  </section>
+</main>
+
+<script src="app.js?v=10"></script>
+</body>
+</html>

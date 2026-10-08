@@ -1,0 +1,13 @@
+{
+  "name": "Coach the Coach",
+  "short_name": "Coach",
+  "description": "Record a team lead's coaching session, transcribe it, and get coaching on the coaching.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f1115",
+  "theme_color": "#0f1115",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
