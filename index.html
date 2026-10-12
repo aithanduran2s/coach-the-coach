@@ -107,12 +107,14 @@ addEventListener('load', function () {
   <!-- ======== RECORD ======== -->
   <section id="vRec">
     <div class="card">
-      <label>Whose session is this?</label>
-      <div class="seg">
-        <button id="modeGrade" class="on">A team lead's — grade it</button>
-        <button id="modeTeach">Mine — learn from it</button>
+      <div id="modeWrap" class="hide">
+        <label style="margin-top:0">Whose session is this?</label>
+        <div class="seg">
+          <button id="modeGrade" class="on">A team lead's — grade it</button>
+          <button id="modeTeach">Mine — learn from it</button>
+        </div>
+        <p class="muted" id="modeHelp" style="margin:10px 0 0">Transcribed, then graded against your rubric.</p>
       </div>
-      <p class="muted" id="modeHelp" style="margin:10px 0 0">Transcribed, then graded against your rubric.</p>
 
       <label id="lbLead">Team lead being coached</label>
       <input id="lead" placeholder="e.g. Yasmin">
@@ -245,6 +247,6 @@ addEventListener('load', function () {
   </section>
 </main>
 
-<script src="app.js?v=12"></script>
+<script src="app.js?v=13"></script>
 </body>
 </html>

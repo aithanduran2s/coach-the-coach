@@ -689,6 +689,8 @@ if (location.hash === '#teamlead') { localStorage.removeItem('ctc.owner'); histo
 if (localStorage.getItem('ctc.owner') === '1') {
   $('cardRubric').classList.remove('hide');
   $('cardLearn').classList.remove('hide');
+  // A team lead must never reach 'teach' mode — it skips the log and the calendar.
+  $('modeWrap').classList.remove('hide');
 }
 
 $('btnTest').onclick = async () => {
