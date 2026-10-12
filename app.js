@@ -7,11 +7,74 @@ const BASE = 'https://generativelanguage.googleapis.com/v1beta';
 const CHUNK_SECONDS = 300;   // 5 min per transcription request (~12.8MB base64, under the 20MB cap)
 const RATE = 16000;          // 16kHz mono is plenty for speech and keeps requests small
 
+/* The coaching standard ships with the app so a team lead installs and is ready.
+   Declared up here because cfg.rubric falls back to it during initial setup. */
+const STANDARD = `COACHING STANDARD
+
+1. OPENED WITH THREE-PART SELF-ASSESSMENT
+Lead opens by acknowledging rapport on the call, then prompts the agent to self-evaluate across three specific categories: strengths, improvements, and behaviors to eliminate.
+Pass: "Tell me what you think about your call. Be honest. Right? I want to know what you did good, what you think you can improve and what you think maybe you should stop doing."
+
+2. VERIFIED TOOLS AND FACT-CHECKED THE CALL
+Lead checks which systems the agent searched and verifies availability facts before giving feedback, rather than taking the agent's narrative at face value.
+Pass: "What tools did you use? ... So, in Concert, you only saw AT&T available?"
+Fail: Accepting the agent's statement that "only AT&T was available" without verifying the tools used.
+
+3. CONFRONTED UNAPPLIED FEEDBACK
+Lead explicitly links the call to prior coaching, calling out the agent for repeating the exact same error immediately after receiving guidance.
+Pass: "I told you to get the pain points. You didn't do it. And I gave you the feedback right before this call. And you got the same type of call and you didn't apply it."
+Fail: Treating recurring mistakes as fresh observations without referencing previous coaching discussions.
+
+4. DISSECTED MISSED DISCOVERY AND LEVERAGE
+Lead isolates explicit customer cues from the call and exposes how the agent failed to build urgency, identify pain points, or uncover existing services.
+Pass: "She told you it was ending on the 14th, right? Today's the 12th. She has two more days of internet. Right? You didn't use this to create any type of urgency at all."
+Fail: "You need to build more value and create urgency on your pitches."
+
+5. CHALLENGED VAGUE CLAIMS WITH SPECIFICS
+Lead corners the agent on vague, inaccurate, or misleading statements made to the customer, forcing precise details and numbers.
+Pass: "You told her about the Lifeline discount. You told it was a significant discount. How much is significant? ... 9.25 is not significant. You need to be very specific with customers."
+Fail: Allowing the agent to use phrases like "significant savings" without verifying the exact dollar amount.
+
+6. MODELED EXACT DISCOVERY SCRIPTING
+Lead speaks the exact string of probing questions aloud in conversation, showing precisely how to dig into contracts, spend, and devices.
+Pass: "How long have you been with Spectrum? A year? 2 years? More? How much are you paying? You know, like apart from internet, do you have TV connected? Do you have your phone?"
+Fail: "Make sure you ask probing questions about what services they have."
+
+7. AUDITED POST-CALL OWNERSHIP AND PROCESS DISCIPLINE
+Lead inspects follow-through on promised actions, confronting the agent when tasks were abandoned for breaks or subsequent calls, and rejecting an order-taker mindset.
+Pass: "Did you send her the link for the Lifeline? Not yet, and you took another call and you went on a break. Right? ... You're not here to take orders."
+Fail: Evaluating the pitch while ignoring incomplete customer follow-ups and abandoned administrative steps.
+
+8. REJECTED HELPLESS EXCUSES AND DEMANDED SELF-ACTION
+Lead refuses to accept forgetfulness or passive excuses, immediately throwing responsibility back onto the agent to find personal systems for retention.
+Pass: "Agent: 'Se me olvida todo.' Lead: 'What do you want me to do, then? ... What are you doing to help yourself?'"
+Fail: "That's okay, it happens to everyone. Just try to write it down next time."
+
+9. KEPT THE AGENT TALKING
+Lead holds the session near a 60/40 split. When the agent opens a door, the lead asks instead of lecturing.
+Pass: Agent: "How?" -> "Good - what do you think you should have asked her first?"
+Fail: Agent: "How?" -> Lead answers with a four-minute explanation.
+
+10. CLOSED WITH A COMMITMENT AND A CHECKPOINT
+Agent restates the one change in their own words, and the lead names a specific day and time they will check it.
+Pass: "Say it back to me. ... Good. I'm listening to two of your calls Thursday morning and I want to hear that question."
+Fail: "You need to work on it." / "We'll see."
+
+HARD FAILS:
+- Lead lets an agent repeat a documented mistake from a previous session without confronting it
+- Lead allows vague or misleading statements to the customer (e.g., claiming a minor discount is "significant") to slide without challenge
+- Lead accepts "I forget everything" or similar deflections without forcing the agent to answer how they will solve it
+- Lead coaches solely on high-level theory without role-modeling the exact questions the agent failed to ask
+- Lead overlooks incomplete customer commitments (e.g., failing to send links before going on break)
+- Lead talked more than 75% of the session
+- Lead criticized the agent as a person instead of a behavior
+- Session ended with no commitment from the agent and no date to check it`;
+
 const $ = id => document.getElementById(id);
 const cfg = {
   get key()    { return localStorage.getItem('ctc.key') || ''; },
   set key(v)   { localStorage.setItem('ctc.key', v); },
-  get rubric() { return localStorage.getItem('ctc.rubric') || ''; },
+  get rubric() { return localStorage.getItem('ctc.rubric') || STANDARD; },
   set rubric(v){ localStorage.setItem('ctc.rubric', v); },
   get lang()   { return localStorage.getItem('ctc.lang') || 'English'; },
   set lang(v)  { localStorage.setItem('ctc.lang', v); },
@@ -136,6 +199,19 @@ function loadBlob(blob, secs) {
   $('progWrap').classList.add('hide');
   $('progTxt').textContent = '';
 }
+
+/* Download the raw recording. The only copy of the audio is this in-memory blob,
+   so this is the one chance to get it off the device before Discard or a reload. */
+$('btnDl').onclick = () => {
+  if (!audioBlob) return;
+  const ext = (audioBlob.type.split('/')[1] || 'webm').split(';')[0];
+  const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(audioBlob);
+  a.download = `coaching-${stamp}.${ext}`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 30000);
+};
 
 $('btnScrap').onclick = () => {
   audioBlob = null;
@@ -442,7 +518,9 @@ function openSession(s) {
   const hasCoaching = !!s.coaching;
   $('tCoach').classList.toggle('hide', !hasCoaching);
   $('btnMail').classList.toggle('hide', !hasCoaching);
-  $('btnCopy').classList.toggle('hide', !hasCoaching);
+  // Copy and Download always available — on a gold session they act on the transcript.
+  $('btnCopy').classList.remove('hide');
+  $('btnCopy').textContent = hasCoaching ? 'Copy' : 'Copy transcript';
   $('outCoach').innerHTML = hasCoaching ? md(s.coaching)
     : '<p class="muted">Saved as your reference standard. No grading on your own sessions.</p>';
   $('outScript').textContent = s.transcript;
@@ -472,8 +550,16 @@ function md(t) {
 }
 
 $('btnCopy').onclick = async () => {
-  await navigator.clipboard.writeText(current.coaching);
-  $('btnCopy').textContent = 'Copied'; setTimeout(() => $('btnCopy').textContent = 'Copy', 1200);
+  const label = current.coaching ? 'Copy' : 'Copy transcript';
+  const text = current.coaching || current.transcript || '';
+  try { await navigator.clipboard.writeText(text); }
+  catch (e) {
+    // iOS Safari refuses the async clipboard outside a trusted gesture chain.
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); ta.remove();
+  }
+  $('btnCopy').textContent = 'Copied'; setTimeout(() => $('btnCopy').textContent = label, 1200);
 };
 $('btnMail').onclick = () => {
   const sub = `Coaching feedback — ${current.lead || 'session'} / ${new Date(current.at).toLocaleDateString()}`;
@@ -510,12 +596,27 @@ $('outLang').value = cfg.lang;
 
 $('btnSave').onclick = () => {
   cfg.key = $('key').value.trim();
-  cfg.rubric = $('rubric').value;
   cfg.lang = $('outLang').value;
   $('setMsg').textContent = 'Saved';
   $('setMsg').className = 'ok';
   setTimeout(() => $('setMsg').textContent = '', 1800);
 };
+
+$('btnSaveRubric').onclick = () => {
+  cfg.rubric = $('rubric').value;
+  $('rubricMsg').textContent = 'Rubric saved';
+  $('rubricMsg').className = 'ok';
+  setTimeout(() => $('rubricMsg').textContent = '', 1800);
+};
+
+/* Owner mode: the rubric and the learn-from-my-sessions tools are Joey's, not the
+   team leads'. Unlock once per device by opening the app with #owner on the URL. */
+if (location.hash === '#owner') { localStorage.setItem('ctc.owner', '1'); history.replaceState(null, '', location.pathname); }
+if (location.hash === '#teamlead') { localStorage.removeItem('ctc.owner'); history.replaceState(null, '', location.pathname); }
+if (localStorage.getItem('ctc.owner') === '1') {
+  $('cardRubric').classList.remove('hide');
+  $('cardLearn').classList.remove('hide');
+}
 
 $('btnTest').onclick = async () => {
   cfg.key = $('key').value.trim();
@@ -607,43 +708,10 @@ $('btnLearn').onclick = async () => {
 };
 
 $('btnSeed').onclick = () => {
-  if ($('rubric').value.trim() && !confirm('Replace what is in the rubric box?')) return;
-  $('rubric').value = SEED;
+  if ($('rubric').value.trim() && !confirm('Replace what is in the rubric box with the shipped standard?')) return;
+  $('rubric').value = STANDARD;
 };
 
-const SEED = `COACHING STANDARD — edit this. Every line here is something the AI will grade the team lead on.
-
-1. OPENED WITH THE NUMBER
-   Lead started from a specific metric (points, close rate, Gig%, AP%), not a vibe.
-   Fail: "how's it going out there"  Pass: "you're at 14 points, close rate 9% — let's look at why"
-
-2. ASKED BEFORE TELLING
-   Lead got the agent to diagnose their own call before offering the fix.
-   At least 2 open questions before the first instruction.
-
-3. LISTENED TO A REAL CALL
-   Coaching is anchored to a specific recorded call or live moment, not generalities.
-
-4. ONE BEHAVIOR, NOT FIVE
-   Session lands on a single change the agent can make tomorrow. Stacking 4 fixes = nothing changes.
-
-5. MODELED THE LANGUAGE
-   Lead said the better version out loud, word for word, instead of describing it abstractly.
-
-6. AGENT REPEATED IT BACK
-   Agent restated the commitment in their own words before the session ended.
-
-7. SET A CHECKPOINT
-   Specific day/time the lead will check the change. "We'll see" is a fail.
-
-8. TONE
-   Direct but not demeaning. Agent talked at least 40% of the session.
-
-HARD FAILS (call these out loudly if they happen):
-- Lead talked more than 75% of the session
-- Session ended with no commitment from the agent
-- Lead criticized the agent as a person instead of a behavior
-- Lead promised something they cannot deliver`;
 
 /* No service worker: the app needs the network for Gemini anyway, and offline
    caching only ever served stale builds. Tear down any old registration. */

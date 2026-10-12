@@ -136,6 +136,7 @@ addEventListener('load', function () {
       <audio id="player" controls style="width:100%;margin:12px 0"></audio>
       <div class="row">
         <button id="btnGo" style="flex:1">Transcribe &amp; coach</button>
+        <button class="ghost" id="btnDl">Download audio</button>
         <button class="ghost" id="btnScrap">Discard</button>
       </div>
       <div class="bar hide" id="progWrap"><i id="prog"></i></div>
@@ -201,20 +202,24 @@ addEventListener('load', function () {
         <option value="the same language the session was held in">Match the session</option>
       </select>
       <p class="muted">Session audio is auto-detected (English, Spanish, or mixed) either way.</p>
-    </div>
-
-    <div class="card">
-      <label>What good coaching looks like — your rubric</label>
-      <p class="muted" style="margin-top:-2px">Paste your SOPs / QA scorecard, then add your own rules underneath. This is the only thing the AI grades against.</p>
-      <textarea id="rubric" style="min-height:320px"></textarea>
       <div class="row" style="margin-top:12px">
         <button id="btnSave">Save setup</button>
-        <button class="ghost" id="btnSeed">Load starter rubric</button>
         <span id="setMsg" class="muted" style="align-self:center"></span>
       </div>
     </div>
 
-    <div class="card">
+    <div class="card hide" id="cardRubric">
+      <label>What good coaching looks like — your rubric</label>
+      <p class="muted" style="margin-top:-2px">Paste your SOPs / QA scorecard, then add your own rules underneath. This is the only thing the AI grades against.</p>
+      <textarea id="rubric" style="min-height:320px"></textarea>
+      <div class="row" style="margin-top:12px">
+        <button id="btnSaveRubric">Save rubric</button>
+        <button class="ghost" id="btnSeed">Reset to shipped standard</button>
+        <span id="rubricMsg" class="muted" style="align-self:center"></span>
+      </div>
+    </div>
+
+    <div class="card hide" id="cardLearn">
       <label>Learn from my own coaching</label>
       <p class="muted" style="margin-top:-2px" id="goldCount"></p>
       <p class="muted">Record your own 1:1s on the Record tab with <b>&ldquo;Mine — learn from it&rdquo;</b> selected.
@@ -229,6 +234,6 @@ addEventListener('load', function () {
   </section>
 </main>
 
-<script src="app.js?v=10"></script>
+<script src="app.js?v=11"></script>
 </body>
 </html>
