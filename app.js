@@ -22,7 +22,8 @@ const LOG_FIELDS = {
   minutes:  'entry.1366046613',
   score:    'entry.778580099',
   snapshot: 'entry.170110765',
-  fix:      'entry.557265612'
+  fix:      'entry.557265612',
+  next:     'entry.1061597635'   // an on-submit trigger turns this into a calendar event
 };
 
 /* The coaching standard ships with the app so a team lead installs and is ready.
@@ -130,6 +131,8 @@ function setMode(m) {
     ? 'Transcribed, then graded against your rubric.'
     : 'Transcribed and saved as your reference standard. Not graded.';
   $('btnGo').textContent = m === 'grade' ? 'Transcribe & coach' : 'Transcribe & save as my standard';
+  // Joey's own sessions aren't logged, so there is nothing to put on the calendar.
+  $('nextWrap').classList.toggle('hide', m !== 'grade');
 }
 $('modeGrade').onclick = () => setMode('grade');
 $('modeTeach').onclick = () => setMode('teach');
@@ -493,6 +496,9 @@ function logSession(s) {
     f.append(LOG_FIELDS.score,    s.score == null ? '' : String(s.score));
     f.append(LOG_FIELDS.snapshot, sectionOf(s.coaching, 'Snapshot').slice(0, 900));
     f.append(LOG_FIELDS.fix,      sectionOf(s.coaching, 'One thing for next session').slice(0, 900));
+    // Send an absolute timestamp, resolved on this device: a lead in El Salvador
+    // picking 2:30 must mean 2:30 where they are, not 2:30 on Joey's clock.
+    f.append(LOG_FIELDS.next,     s.next ? new Date(s.next).toISOString() : '');
     fetch(LOG_URL, { method: 'POST', mode: 'no-cors', body: f }).catch(() => {});
   } catch (e) { /* never break the app over reporting */ }
 }
@@ -549,12 +555,12 @@ $('btnGo').onclick = async () => {
     const sess = {
       id: Date.now(), at: new Date().toISOString(), gold: mode === 'teach',
       lead, agent, duration: Math.round(duration), transcript, coaching,
-      score: parseScore(coaching)
+      score: parseScore(coaching), next: $('next1on1').value
     };
     store.save(sess);
     logSession(sess);
     $('btnScrap').click();
-    $('lead').value = ''; $('agent').value = '';   // don't carry names onto the next session
+    $('lead').value = ''; $('agent').value = ''; $('next1on1').value = '';  // don't carry onto the next session
     refreshGoldCount();
     openSession(sess);
   } catch (e) {
