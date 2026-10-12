@@ -7,6 +7,24 @@ const BASE = 'https://generativelanguage.googleapis.com/v1beta';
 const CHUNK_SECONDS = 300;   // 5 min per transcription request (~12.8MB base64, under the 20MB cap)
 const RATE = 16000;          // 16kHz mono is plenty for speech and keeps requests small
 
+/* Every graded session is logged to Joey's sheet so he can see a session happened
+   without the team lead having to send him anything.
+
+   This posts to a Google Form rather than an Apps Script web app: the Mazama
+   Workspace admin blocks web apps from accepting outside requests, but an
+   anonymous Form submission goes through. Responses land in
+   "Coach the Coach — Session Log". Blank LOG_URL disables reporting. */
+const LOG_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSenAw__JwCCn07OJl7XXueRNZjfhshyzJjLlVEQfkZz-FG9iA/formResponse';
+const LOG_FIELDS = {
+  at:       'entry.16029254',
+  lead:     'entry.1936753996',
+  agent:    'entry.802614363',
+  minutes:  'entry.1366046613',
+  score:    'entry.778580099',
+  snapshot: 'entry.170110765',
+  fix:      'entry.557265612'
+};
+
 /* The coaching standard ships with the app so a team lead installs and is ready.
    Declared up here because cfg.rubric falls back to it during initial setup. */
 const STANDARD = `COACHING STANDARD
@@ -418,6 +436,14 @@ Agent being coached: ${agent || 'unnamed'}
 
 Write your response in ${lang}, using these exact section headings:
 
+## Score
+A single line, exactly this format and nothing else on the line:
+SCORE: NN/100
+Where NN is a whole number. Start at 100 and subtract for each standard item the lead missed,
+weighting the items the standard calls hard fails far more heavily than the rest. A session that
+trips any hard fail cannot score above 55. Do not grade on a curve and do not be generous.
+On the next line, one short sentence justifying the number.
+
 ## Snapshot
 Two sentences: what this session was about and how it went.
 
@@ -443,6 +469,39 @@ Be direct and specific. Quote the transcript constantly. Never give generic coac
 
 === TRANSCRIPT ===
 `;
+
+/* ---------------- score + reporting ---------------- */
+// The model is told to emit "SCORE: NN/100" on its own line. Anything else means
+// it ignored the format, and a missing score is better than a made-up one.
+function parseScore(text) {
+  const m = /SCORE:\s*(\d{1,3})\s*\/\s*100/i.exec(text || '');
+  if (!m) return null;
+  const n = +m[1];
+  return n >= 0 && n <= 100 ? n : null;
+}
+
+/* Fire-and-forget. no-cors because Forms sends no CORS headers — we never read
+   the response, and a failed log must never surface to the team lead mid-session. */
+function logSession(s) {
+  if (!LOG_URL || s.gold) return;          // Joey's own sessions aren't reported
+  try {
+    const f = new FormData();
+    f.append(LOG_FIELDS.at,       new Date(s.at).toLocaleString());
+    f.append(LOG_FIELDS.lead,     s.lead || '(not named)');
+    f.append(LOG_FIELDS.agent,    s.agent || '(not named)');
+    f.append(LOG_FIELDS.minutes,  String(Math.round((s.duration || 0) / 60)));
+    f.append(LOG_FIELDS.score,    s.score == null ? '' : String(s.score));
+    f.append(LOG_FIELDS.snapshot, sectionOf(s.coaching, 'Snapshot').slice(0, 900));
+    f.append(LOG_FIELDS.fix,      sectionOf(s.coaching, 'One thing for next session').slice(0, 900));
+    fetch(LOG_URL, { method: 'POST', mode: 'no-cors', body: f }).catch(() => {});
+  } catch (e) { /* never break the app over reporting */ }
+}
+
+function sectionOf(text, heading) {
+  const re = new RegExp('^##\\s*' + heading + '[ \\t]*$([\\s\\S]*?)(?=^##[ \\t]|$(?![\\s\\S]))', 'mi');
+  const m = re.exec(text || '');
+  return m ? m[1].trim() : '';
+}
 
 /* ---------------- run ---------------- */
 $('btnGo').onclick = async () => {
@@ -489,9 +548,11 @@ $('btnGo').onclick = async () => {
     setProg(100, 'Done');
     const sess = {
       id: Date.now(), at: new Date().toISOString(), gold: mode === 'teach',
-      lead, agent, duration: Math.round(duration), transcript, coaching
+      lead, agent, duration: Math.round(duration), transcript, coaching,
+      score: parseScore(coaching)
     };
     store.save(sess);
+    logSession(sess);
     $('btnScrap').click();
     $('lead').value = ''; $('agent').value = '';   // don't carry names onto the next session
     refreshGoldCount();
@@ -574,7 +635,7 @@ function renderHistory() {
   const a = store.all();
   $('histList').innerHTML = a.length
     ? a.map(s => `<div class="sess" data-id="${s.id}">
-        <div><b>${esc(s.lead || 'Team lead')} → ${esc(s.agent || 'agent')}</b>${s.gold ? '<span class="pill">MY STANDARD</span>' : ''}
+        <div><b>${esc(s.lead || 'Team lead')} → ${esc(s.agent || 'agent')}</b>${s.gold ? '<span class="pill">MY STANDARD</span>' : ''}${s.score != null ? `<span class="pill">${s.score}</span>` : ''}
         <div class="muted">${new Date(s.at).toLocaleString()} · ${mmss(s.duration)}</div></div>
         <span class="muted">›</span></div>`).join('')
     : '<p class="muted">No sessions yet. Record one on the Record tab.</p>';
