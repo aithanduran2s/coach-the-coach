@@ -208,6 +208,11 @@ addEventListener('load', function () {
         <option value="the same language the session was held in">Match the session</option>
       </select>
       <p class="muted">Session audio is auto-detected (English, Spanish, or mixed) either way.</p>
+
+      <label>Your email</label>
+      <input id="myEmail" type="email" placeholder="you@mazama.ai" autocomplete="email">
+      <p class="muted">Used to send you a calendar invite for the next 1:1 you book, so your phone reminds you.</p>
+
       <div class="row" style="margin-top:12px">
         <button id="btnSave">Save setup</button>
         <span id="setMsg" class="muted" style="align-self:center"></span>
@@ -240,6 +245,6 @@ addEventListener('load', function () {
   </section>
 </main>
 
-<script src="app.js?v=11"></script>
+<script src="app.js?v=12"></script>
 </body>
 </html>

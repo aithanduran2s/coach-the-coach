@@ -23,7 +23,8 @@ const LOG_FIELDS = {
   score:    'entry.778580099',
   snapshot: 'entry.170110765',
   fix:      'entry.557265612',
-  next:     'entry.1061597635'   // an on-submit trigger turns this into a calendar event
+  next:     'entry.1061597635',  // an on-submit trigger turns this into a calendar event
+  email:    'entry.544662998'    // the lead gets invited to the event, so her phone reminds her
 };
 
 /* The coaching standard ships with the app so a team lead installs and is ready.
@@ -99,6 +100,8 @@ const cfg = {
   set lang(v)  { localStorage.setItem('ctc.lang', v); },
   get model()  { return localStorage.getItem('ctc.model') || ''; },
   set model(v) { localStorage.setItem('ctc.model', v); },
+  get email()  { return localStorage.getItem('ctc.email') || ''; },
+  set email(v) { localStorage.setItem('ctc.email', v); },
 };
 const store = {
   all()  { try { return JSON.parse(localStorage.getItem('ctc.sessions') || '[]'); } catch { return []; } },
@@ -499,6 +502,7 @@ function logSession(s) {
     // Send an absolute timestamp, resolved on this device: a lead in El Salvador
     // picking 2:30 must mean 2:30 where they are, not 2:30 on Joey's clock.
     f.append(LOG_FIELDS.next,     s.next ? new Date(s.next).toISOString() : '');
+    f.append(LOG_FIELDS.email,    cfg.email || '');
     fetch(LOG_URL, { method: 'POST', mode: 'no-cors', body: f }).catch(() => {});
   } catch (e) { /* never break the app over reporting */ }
 }
@@ -660,10 +664,12 @@ $('btnGold').onclick = () => {
 $('key').value = cfg.key;
 $('rubric').value = cfg.rubric;
 $('outLang').value = cfg.lang;
+$('myEmail').value = cfg.email;
 
 $('btnSave').onclick = () => {
   cfg.key = $('key').value.trim();
   cfg.lang = $('outLang').value;
+  cfg.email = $('myEmail').value.trim();
   $('setMsg').textContent = 'Saved';
   $('setMsg').className = 'ok';
   setTimeout(() => $('setMsg').textContent = '', 1800);
@@ -793,3 +799,15 @@ if ('serviceWorker' in navigator) {
 setMode('grade');
 refreshGoldCount();
 if (!cfg.key) show('vSet');
+
+/* Opened from the calendar reminder: ?lead=&agent= fills the names in so she can
+   hit record without typing. Strip them afterwards so a reload starts clean. */
+(function prefillFromLink() {
+  const q = new URLSearchParams(location.search);
+  const lead = q.get('lead'), agent = q.get('agent');
+  if (!lead && !agent) return;
+  if (lead)  $('lead').value  = lead;
+  if (agent) $('agent').value = agent;
+  if (cfg.key) show('vRec');
+  history.replaceState(null, '', location.pathname);
+})();
