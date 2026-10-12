@@ -592,6 +592,7 @@ function openSession(s) {
   // Copy and Download always available — on a gold session they act on the transcript.
   $('btnCopy').classList.remove('hide');
   $('btnCopy').textContent = hasCoaching ? 'Copy' : 'Copy transcript';
+  $('btnTxt').textContent = 'Download';
   $('outCoach').innerHTML = hasCoaching ? md(s.coaching)
     : '<p class="muted">Saved as your reference standard. No grading on your own sessions.</p>';
   $('outScript').textContent = s.transcript;
@@ -631,6 +632,29 @@ $('btnCopy').onclick = async () => {
     document.execCommand('copy'); ta.remove();
   }
   $('btnCopy').textContent = 'Copied'; setTimeout(() => $('btnCopy').textContent = label, 1200);
+};
+
+/* Save the write-up as a file. A gold session has no coaching, so it saves the
+   transcript instead — same as Copy does. */
+$('btnTxt').onclick = () => {
+  const d = new Date(current.at);
+  const head = [
+    `${current.lead || 'Team lead'} coaching ${current.agent || 'agent'}`,
+    `${d.toLocaleString()} · ${mmss(current.duration)}` +
+      (current.score != null ? ` · scored ${current.score}/100` : ''),
+    ''
+  ].join('\n');
+  const body = current.coaching || current.transcript || '';
+  const slug = s => (s || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const name = ['coaching', slug(current.lead), slug(current.agent),
+    d.toISOString().slice(0, 10)].filter(Boolean).join('-') + '.txt';
+
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([head + body], { type: 'text/plain' }));
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+  $('btnTxt').textContent = 'Saved'; setTimeout(() => $('btnTxt').textContent = 'Download', 1200);
 };
 $('btnMail').onclick = () => {
   const sub = `Coaching feedback — ${current.lead || 'session'} / ${new Date(current.at).toLocaleDateString()}`;
