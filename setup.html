@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Coach the Coach — Setup</title>
+<style>
+  :root{--bg:#0f1115;--card:#181b22;--line:#272b35;--fg:#e8eaf0;--dim:#9aa1b1;--accent:#4f8cff}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);
+    font:17px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+  main{max-width:640px;margin:0 auto;padding:26px 18px 60px}
+  h1{font-size:25px;line-height:1.25;letter-spacing:-.4px;margin:0 0 6px}
+  .sub{color:var(--dim);margin:0 0 26px}
+  h2{font-size:14px;text-transform:uppercase;letter-spacing:.7px;color:var(--accent);
+    margin:34px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  ol{padding-left:22px;margin:0}
+  li{margin:9px 0}
+  b{font-weight:600}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin:16px 0}
+  .note{color:var(--dim);font-size:15px;margin:12px 0 0}
+  figure{margin:18px 0 0}
+  img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:10px}
+  figcaption{color:var(--dim);font-size:13.5px;margin-top:8px;text-align:center}
+  .shot-sm{max-width:300px;margin-left:auto;margin-right:auto}
+  a{color:var(--accent);word-break:break-word}
+  .cta{display:block;background:var(--accent);color:#fff;text-decoration:none;text-align:center;
+    font-weight:600;padding:16px;border-radius:12px;margin:14px 0}
+  .facts p{margin:0 0 14px}
+  .facts p:last-child{margin:0}
+</style>
+</head>
+<body>
+<main>
+
+<h1>Coach the Coach — Setup</h1>
+<p class="sub">One time, about 5 minutes, on your phone. After this, every session is just: type two names, hit record.</p>
+
+<h2>Step 1 — Put the app on your phone</h2>
+<div class="card">
+  <a class="cta" href="https://aithanduran2s.github.io/coach-the-coach/">Open the app</a>
+  <ol>
+    <li><b>iPhone:</b> tap the Share button (the square with the arrow pointing up), scroll down, tap <b>Add to Home Screen</b>, then <b>Add</b>.</li>
+    <li><b>Android:</b> tap the three dots, then <b>Add to Home screen</b>, then <b>Install</b>.</li>
+    <li>Close the browser. From now on, open it from your home screen.</li>
+  </ol>
+</div>
+
+<h2>Step 2 — Get your key</h2>
+<p>The app uses Google's AI to write out the session and score it. That needs a key of your own. It's free.</p>
+<div class="card">
+  <ol>
+    <li>Go to <a href="https://aistudio.google.com/apikey">aistudio.google.com/apikey</a></li>
+    <li>Sign in with your Google account.</li>
+    <li>Tap <b>Create API key</b> — top right of the screen.</li>
+  </ol>
+  <figure>
+    <img src="setup/01-create-api-key.png" alt="The API Keys page, with the Create API key button in the top right">
+    <figcaption>Step 2.3 — the button is in the top right corner</figcaption>
+  </figure>
+  <ol start="4">
+    <li>A box opens called <b>Create a new key</b>. It fills in a name for you — don't change anything.</li>
+    <li>Tap <b>Create key</b>.</li>
+  </ol>
+  <figure>
+    <img src="setup/02-create-key-dialog.png" alt="The Create a new key box, with a prefilled name and a Create key button">
+    <figcaption>Step 2.4 — leave it as it is and tap Create key</figcaption>
+  </figure>
+  <ol start="6">
+    <li>A long code starting with <b>AIza…</b> appears. Tap the copy icon next to it.</li>
+  </ol>
+  <p class="note">Copy the code before you close that box. Once it's gone you'd have to make a new key.</p>
+</div>
+
+<h2>Step 3 — Put the key in the app</h2>
+<div class="card">
+  <ol>
+    <li>Open the app. Tap <b>Setup</b> at the top right.</li>
+    <li>Paste the code into <b>Gemini API key</b>.</li>
+    <li>Tap <b>Test key</b>. Wait for it to say it worked.</li>
+    <li>Type your work email into <b>Your email</b>.</li>
+    <li>Pick your <b>Coaching feedback language</b> — English or Spanish, whichever you'd rather read.</li>
+    <li>Tap <b>Save setup</b>.</li>
+  </ol>
+  <figure class="shot-sm">
+    <img src="setup/03-app-setup.png" alt="The app's Setup tab, showing the Gemini API key box, language picker and Your email box">
+    <figcaption>The Setup tab</figcaption>
+  </figure>
+  <p class="note">That's it — you're done setting up.</p>
+</div>
+
+<h2>Every session, from now on</h2>
+<div class="card">
+  <ol>
+    <li>Open the app on the <b>Record</b> tab.</li>
+    <li>Type your name and the agent's name.</li>
+    <li>Set <b>Next 1:1 with this agent</b> — the day and time you'll meet them again.</li>
+    <li>Tap <b>Start recording</b>. Put the phone down. Run your session like normal.</li>
+    <li>Tap <b>Stop</b> when you're finished.</li>
+    <li>Tap <b>Transcribe &amp; coach</b> and give it a couple of minutes.</li>
+  </ol>
+  <figure class="shot-sm">
+    <img src="setup/04-app-record.png" alt="The app's Record tab, with name boxes, the next 1:1 picker and the Start recording button">
+    <figcaption>The Record tab</figcaption>
+  </figure>
+  <p class="note">You'll get back a written breakdown of the session and <b>one thing to do differently next time</b>.</p>
+</div>
+
+<h2>Worth knowing</h2>
+<div class="card facts">
+  <p><b>The recording stays on your phone.</b> Nothing leaves the device until you tap "Transcribe &amp; coach".</p>
+  <p><b>You'll get a calendar invite</b> for the next 1:1 you booked. Accept it. Your phone reminds you 5 minutes before, and tapping the invite opens the app with the agent's name already filled in — so you just hit record.</p>
+  <p><b>Don't close the session until you've seen the feedback.</b> The recording only lives on your phone until you transcribe it.</p>
+  <p><b>If something looks broken,</b> the app says so on screen in red. Send that screenshot — don't guess.</p>
+</div>
+
+</main>
+</body>
+</html>
