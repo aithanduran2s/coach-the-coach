@@ -260,6 +260,17 @@ $('btnBack').onclick = () => show('vHist');
 
 function err(msg) { $('recErr').innerHTML = `<div class="err">${esc(msg)}</div>`; }
 function clearErr() { $('recErr').innerHTML = ''; }
+
+/* Nothing is saved, logged or put on a calendar, and the recording is left loaded on
+   purpose — a lead who stopped early can keep going rather than lose the audio. */
+function notASession(reason) {
+  $('progWrap').classList.add('hide');
+  $('progTxt').textContent = '';
+  $('recErr').innerHTML =
+    `<div class="notice"><b>This doesn\u2019t look like a coaching session, so there\u2019s nothing to grade.</b>`
+    + (reason ? `\n${esc(reason)}` : '')
+    + `\n\nNothing was saved. Your recording is still here \u2014 record over it, or tap Discard.</div>`;
+}
 const esc = s => String(s).replace(/[&<>]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[c]));
 const mmss = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(Math.floor(s%60)).padStart(2,'0')}`;
 
@@ -551,6 +562,15 @@ ${rubric}
 === END OF STANDARD ===
 ${goldBlock()}
 
+BEFORE YOU GRADE, CHECK THIS IS ACTUALLY A COACHING SESSION.
+A coaching session is a team lead and an agent talking about the agent's calls or performance.
+If the transcript is NOT that — a few seconds of test audio, silence, someone checking the mic,
+a sales call, a meeting with no coaching in it, or too little conversation to judge — then do
+not grade it and do not score it. Output exactly one line and nothing else:
+NOT_A_SESSION: <one short sentence saying what the recording appears to be>
+Only do this when you are confident. A real session that went badly is still a session — grade
+it. A short session is still a session if coaching happened in it.
+
 Grade ONLY against the standard above. If the standard does not cover something, say so rather than inventing a best practice.
 
 CRITICAL — how to use the examples in the standard. Every "Sounds like" line is an
@@ -614,6 +634,23 @@ function parseScore(text) {
   return n >= 0 && n <= 100 ? n : null;
 }
 
+/* A throwaway test recording used to come back as a real 0/100 scorecard, which reads
+   like a verdict on the team lead. Nothing that isn't a coaching session gets a score,
+   a row in the log, or a calendar invite.
+
+   Two layers: this one catches the obvious junk for free before spending a grading call,
+   and the prompt asks the model to emit NOT_A_SESSION for everything subtler. The bar
+   here is deliberately low — only clearly-nothing recordings — because a real session
+   wrongly rejected is far worse than a test recording that slips through to the model. */
+function tooThinToGrade(transcript, duration) {
+  const words = (transcript || '').trim().split(/\s+/).filter(Boolean).length;
+  if (duration < 45)  return 'The recording is only ' + Math.round(duration) + ' seconds long.';
+  if (words    < 60)  return 'There is almost nothing said in the recording.';
+  return null;
+}
+
+const NOT_A_SESSION = /^\s*NOT_A_SESSION\s*:?\s*(.*)$/im;
+
 /* Fire-and-forget. no-cors because Forms sends no CORS headers — we never read
    the response, and a failed log must never surface to the team lead mid-session. */
 function logSession(s) {
@@ -675,12 +712,18 @@ $('btnGo').onclick = async () => {
     let coaching = '';
 
     if (mode === 'grade') {
+      const thin = tooThinToGrade(transcript, duration);
+      if (thin) return notASession(thin);
+
       setProg(82, 'Writing the coaching…');
       coaching = await gemini(
         [{ text: coachPrompt(cfg.rubric, cfg.lang, lead, agent) + transcript }],
         { maxOutputTokens: 16384, thinkingConfig: { thinkingBudget: 2048 } },
         note => setProg(82, note)
       );
+
+      const m = NOT_A_SESSION.exec(coaching);
+      if (m) return notASession(m[1].trim());
     }
 
     setProg(100, 'Done');

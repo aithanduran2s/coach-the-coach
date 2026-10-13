@@ -87,6 +87,10 @@ addEventListener('load', function () {
   .tabs button.on{background:var(--card);color:var(--fg)}
   .err{background:#2a1618;border:1px solid var(--bad);color:#ffb4ae;padding:12px;border-radius:10px;
     margin:12px 0;font-size:14px;white-space:pre-wrap}
+  /* Not an error — the recording just wasn't a coaching session. Deliberately not red:
+     a team lead should read it as "nothing to grade here", not as a failure. */
+  .notice{background:#1b1f27;border:1px solid #39404e;color:var(--fg);padding:12px;
+    border-radius:10px;margin:12px 0;font-size:14px;white-space:pre-wrap}
   .ok{color:var(--good)}
   .hide{display:none}
   .lvl{height:8px;background:#0c0e13;border-radius:4px;overflow:hidden;margin:16px 0}
@@ -248,6 +252,6 @@ addEventListener('load', function () {
   </section>
 </main>
 
-<script src="app.js?v=15"></script>
+<script src="app.js?v=16"></script>
 </body>
 </html>
